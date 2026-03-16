@@ -9,6 +9,7 @@ It includes:
 - health endpoint at `/healthz`
 - environment-driven configuration for database, Redis, RabbitMQ, and storage
 - a production-style multi-stage Docker build
+- starter Cloud 66 `service.yml` and `manifest.yml`
 
 ## Why this repo exists
 
@@ -53,6 +54,17 @@ git remote add origin <your-github-repo-url>
 git push -u origin main
 ```
 
+## Cloud 66 config in repo
+
+This repository includes:
+
+- `service.yml` to describe the service build and port mapping
+- `manifest.yml` as a minimal starting point for initial environment values
+
+Before using `service.yml`, update:
+
+- `git_url` to your real GitHub SSH repo URL
+
 ## Use in Cloud 66
 
 1. Click `New Application`.
@@ -61,6 +73,19 @@ git push -u origin main
 4. Let Cloud 66 detect the `Dockerfile`.
 5. Set environment variables in Cloud 66 using the names in this README.
 6. Deploy to a small test stack first.
+
+## Create a stack with Toolbelt
+
+After installing and authenticating `cx`, you can create the stack from the repo config:
+
+```bash
+cx stacks create \
+  --name fridaypos-cloud66-poc \
+  --service_yaml service.yml \
+  --manifest_yaml manifest.yml
+```
+
+This creates the Cloud 66 stack definition, but you still need to connect a cloud provider such as Azure before deployment.
 
 ## Suggested Cloud 66 variables
 

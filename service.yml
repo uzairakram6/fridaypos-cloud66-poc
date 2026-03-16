@@ -1,0 +1,9 @@
+services:
+  web:
+    git_url: git@github.com:uzairakram6/fridaypos-cloud66-poc.git
+    git_branch: main
+    build_root: .
+    dockerfile_path: ./Dockerfile
+    ports:
+      - container: 8080
+        http: 80

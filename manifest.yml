@@ -1,0 +1,6 @@
+version: 2
+
+environment_variables:
+  FridayPos__TenantName: "FridayPOS Demo"
+  FridayPos__Region: "uae-north"
+  FridayPos__EnableRealtime: "true"
