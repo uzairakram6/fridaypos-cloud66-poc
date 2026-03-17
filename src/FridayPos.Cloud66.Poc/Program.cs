@@ -34,6 +34,13 @@ app.MapGet("/api/config", (IConfiguration config) => Results.Ok(new
     enableRealtime = bool.TryParse(config["FridayPos:EnableRealtime"], out var enabled) && enabled
 }));
 
+app.MapGet("/api/ping", () => Results.Ok(new
+{
+    pong = true,
+    source = "fridaypos-cloud66-poc",
+    deployedAt = "2026-03-17"
+}));
+
 app.MapHub<NotificationsHub>("/hubs/notifications");
 
 app.Run();
