@@ -31,7 +31,8 @@ app.MapGet("/api/config", (IConfiguration config) => Results.Ok(new
 {
     tenantName = config["FridayPos:TenantName"] ?? "FridayPOS Demo",
     region = config["FridayPos:Region"] ?? "unknown",
-    enableRealtime = bool.TryParse(config["FridayPos:EnableRealtime"], out var enabled) && enabled
+    enableRealtime = bool.TryParse(config["FridayPos:EnableRealtime"], out var enabled) && enabled,
+    deploymentLabel = config["FridayPos:DeploymentLabel"] ?? "default"
 }));
 
 app.MapGet("/api/ping", () => Results.Ok(new
@@ -59,6 +60,8 @@ internal sealed class FridayPosOptions
     public string Region { get; init; } = "uae-north";
 
     public bool EnableRealtime { get; init; } = true;
+
+    public string DeploymentLabel { get; init; } = "default";
 }
 
 internal sealed class RedisOptions
