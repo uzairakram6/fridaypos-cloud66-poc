@@ -1,3 +1,5 @@
+using Npgsql;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.Configure<FridayPosOptions>(builder.Configuration.GetSection(FridayPosOptions.SectionName));
@@ -16,16 +18,23 @@ app.MapGet("/", () => Results.Ok(new
     message = "FridayPOS-style ASP.NET Core service for Cloud 66 exploration"
 }));
 
-app.MapGet("/healthz", (IConfiguration config) => Results.Ok(new
+app.MapGet("/healthz", async (IConfiguration config, CancellationToken cancellationToken) =>
 {
-    status = "healthy",
-    environment = app.Environment.EnvironmentName,
-    signalR = true,
-    redisConfigured = !string.IsNullOrWhiteSpace(config["Redis:ConnectionString"]),
-    rabbitMqConfigured = !string.IsNullOrWhiteSpace(config["RabbitMq:Host"]),
-    storageConfigured = !string.IsNullOrWhiteSpace(config["Storage:BlobContainer"]),
-    databaseConfigured = !string.IsNullOrWhiteSpace(config["ConnectionStrings:MainDb"])
-}));
+    var dbCheck = await DatabaseHealthChecks.TryCheckDatabaseAsync(config, cancellationToken);
+
+    return Results.Ok(new
+    {
+        status = dbCheck.reachable || !dbCheck.configured ? "healthy" : "degraded",
+        environment = app.Environment.EnvironmentName,
+        signalR = true,
+        redisConfigured = !string.IsNullOrWhiteSpace(config["Redis:ConnectionString"]),
+        rabbitMqConfigured = !string.IsNullOrWhiteSpace(config["RabbitMq:Host"]),
+        storageConfigured = !string.IsNullOrWhiteSpace(config["Storage:BlobContainer"]),
+        databaseConfigured = dbCheck.configured,
+        databaseReachable = dbCheck.reachable,
+        databaseError = dbCheck.error
+    });
+});
 
 app.MapGet("/api/config", (IConfiguration config) => Results.Ok(new
 {
@@ -41,6 +50,18 @@ app.MapGet("/api/ping", () => Results.Ok(new
     source = "fridaypos-cloud66-poc",
     deployedAt = "2026-03-17"
 }));
+
+app.MapGet("/healthz/db", async (IConfiguration config, CancellationToken cancellationToken) =>
+{
+    var dbCheck = await DatabaseHealthChecks.TryCheckDatabaseAsync(config, cancellationToken);
+
+    return Results.Ok(new
+    {
+        configured = dbCheck.configured,
+        reachable = dbCheck.reachable,
+        error = dbCheck.error
+    });
+});
 
 app.MapHub<NotificationsHub>("/hubs/notifications");
 
@@ -83,4 +104,38 @@ internal sealed class StorageOptions
     public const string SectionName = "Storage";
 
     public string BlobContainer { get; init; } = string.Empty;
+}
+
+internal static class DatabaseHealthChecks
+{
+    public static async Task<(bool configured, bool reachable, string? error)> TryCheckDatabaseAsync(
+        IConfiguration config,
+        CancellationToken cancellationToken)
+    {
+        var connectionString = config.GetConnectionString("MainDb");
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            return (false, false, null);
+        }
+
+        try
+        {
+            var builder = new NpgsqlConnectionStringBuilder(connectionString)
+            {
+                Timeout = 5,
+                CommandTimeout = 5
+            };
+
+            await using var connection = new NpgsqlConnection(builder.ConnectionString);
+            await connection.OpenAsync(cancellationToken);
+            await using var command = new NpgsqlCommand("select 1", connection);
+            await command.ExecuteScalarAsync(cancellationToken);
+
+            return (true, true, null);
+        }
+        catch (Exception ex)
+        {
+            return (true, false, ex.Message);
+        }
+    }
 }

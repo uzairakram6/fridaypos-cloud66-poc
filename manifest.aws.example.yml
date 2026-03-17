@@ -1,0 +1,16 @@
+production:
+  docker:
+    servers:
+      - server:
+          unique_name: web
+          vendor: aws
+          key_name: Default
+          region: us-east-1
+          size: t3.small
+
+environment_variables:
+  FridayPos__TenantName: "FridayPOS Demo"
+  FridayPos__Region: "us-east-1"
+  FridayPos__EnableRealtime: "true"
+  FridayPos__DeploymentLabel: "cloud66-aws-rds-test"
+  ConnectionStrings__MainDb: "Host=<rds-endpoint>;Port=5432;Database=<database>;Username=<username>;Password=<password>;SSL Mode=Require;Trust Server Certificate=true"

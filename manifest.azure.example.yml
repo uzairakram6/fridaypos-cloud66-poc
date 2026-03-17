@@ -1,0 +1,14 @@
+production:
+  docker:
+    servers:
+      - server:
+          unique_name: web
+          vendor: azure_rm
+          key_name: Default
+          region: eastus
+          size: Standard_B2s
+
+environment_variables:
+  FridayPos__TenantName: "FridayPOS Demo"
+  FridayPos__Region: "uae-north"
+  FridayPos__EnableRealtime: "true"
